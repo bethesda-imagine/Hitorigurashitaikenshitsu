@@ -267,7 +267,16 @@
       marker.className = 'marker';
       marker.style.left = x + '%'; marker.style.top = y + '%';
       marker.innerHTML = `<span style="transform: rotate(${angle}deg); display: inline-block;">➔</span>`;
+      
       const groupKey = row[1] + "-" + row[4];
+      const groupPhotos = groupedData[groupKey];
+      if (groupPhotos && groupPhotos.length > 1) {
+        const badge = document.createElement('div');
+        badge.className = 'marker-badge';
+        badge.innerText = groupPhotos.length;
+        marker.appendChild(badge);
+      }
+      
       marker.onclick = (e) => { e.stopPropagation(); openViewer(groupKey, 0, false); };
       wrapper.appendChild(marker);
     });
@@ -306,7 +315,6 @@
     const item = currentGroup[currentIndex]; if(!item) return;
     const img = document.getElementById('v-img');
     
-    // スライド感を出すため、切り替え時だけ一瞬透明にして位置をリセット
     img.style.transition = 'none';
     if(!isInitial) img.style.opacity = 0; 
     
