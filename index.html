@@ -1,18 +1,16 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>京都市一人暮らし体験室 オンライン内覧</title>
   
   <style>
     body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; margin: 0; background: #f8f9fa; }
     header { background: #007BBB; color: white; padding: 1rem; text-align: center; }
     .container { max-width: 900px; margin: auto; padding: 20px; }
     
-    .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    .tab-btn { padding: 10px 20px; cursor: pointer; border: 1px solid #007BBB; background: white; border-radius: 5px; font-weight: bold; transition: 0.3s; }
+    .tabs { display: flex; justify(content): center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn { padding: 10px 20px; cursor: pointer; border: 1px solid #007BBB; background: white; border-radius: 5px; font-weight: bold; transition: 0.3s; flex: 1; min-width: 70px; text-align: center;}
     .tab-btn.active { background: #007BBB; color: white; }
     
     .map-outer-frame {
@@ -71,7 +69,7 @@
       width: 100%; height: 75vh; background: #000; position: relative;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
-    .modal-img { max-width: 100%; max-height: 100%; object-fit: contain; will-change: transform; transition: opacity 0.4s; }
+    .modal-img { max-width: 100%; max-height: 100%; object-fit: contain; will-change: transform; }
     .modal-text { width: 100%; padding: 25px 40px; background: #fff; box-sizing: border-box; overflow-y: auto; }
     #v-room { margin: 0 0 10px 0; font-size: 1.6rem; color: #333; }
     #v-desc { font-size: 1.1rem; line-height: 1.7; color: #555; white-space: pre-wrap; }
@@ -119,17 +117,17 @@
 
  <div style="text-align: center; margin-bottom: 30px;">
   <div class="map-outer-frame" id="map-parent-frame">
-    <div id="map-外観" class="map-wrapper active"><div class="map-img-container"><img src="https://lh3.googleusercontent.com/d/YOUR_IMAGE_ID_0" class="map-img"><div id="markers-外観"></div></div></div>
-    <div id="map-1F" class="map-wrapper"><div class="map-img-container"><img src="https://lh3.googleusercontent.com/d/YOUR_IMAGE_ID_1" class="map-img"><div id="markers-1F"></div></div></div>
-    <div id="map-2F" class="map-wrapper"><div class="map-img-container"><img src="https://lh3.googleusercontent.com/d/YOUR_IMAGE_ID_2" class="map-img"><div id="markers-2F"></div></div></div>
-    <div id="map-3F" class="map-wrapper"><div class="map-img-container"><img src="https://lh3.googleusercontent.com/d/YOUR_IMAGE_ID_3" class="map-img"><div id="markers-3F"></div></div></div>
+    <div id="map-外観" class="map-wrapper active"><div class="map-img-container"><img src="gaikan.jpg" class="map-img"><div id="markers-外観"></div></div></div>
+    <div id="map-1F" class="map-wrapper"><div class="map-img-container"><img src="1f.jpg" class="map-img"><div id="markers-1F"></div></div></div>
+    <div id="map-2F" class="map-wrapper"><div class="map-img-container"><img src="2f.jpg" class="map-img"><div id="markers-2F"></div></div></div>
+    <div id="map-3F" class="map-wrapper"><div class="map-img-container"><img src="3f.jpg" class="map-img"><div id="markers-3F"></div></div></div>
   </div>
   <p style="font-size: 0.8rem; color: #888; margin-top: 8px;">※間取り図は指で拡大・移動できます</p>
  </div>
 
   <div class="thumb-section">
     <h3>写真一覧（フロア別）</h3>
-    <div id="floor-lists-container">読み込み中...</div>
+    <div id="floor-lists-container"></div>
   </div>
 
   <footer style="margin-top: 50px; padding: 40px 20px; background: #f1f3f5; text-align: center; border-radius: 10px; color: #555; font-size: 0.9rem; line-height: 1.8;">
@@ -169,22 +167,23 @@
 </div>
 
 <script>
+  // ★ここに最新のGASデプロイURLを貼り付けてください
+  const GAS_API_URL = "ここにデプロイURLを貼る";
+
   let allData = [];
   let groupedData = {};
   let currentGroup = [];
   let currentIndex = 0;
 
-  // ★ここにメモしたGASのURLを貼ってください★
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxsbFeZuCZoo7_O9p9noNW-Cg8vSCMf92ypv4Z2TqGnFqkjLmiKzfH1m1mBwcI3GkNnFQ/exec";
-
-  // 間取り図パン・ズーム用
   let mScale = 1; let mOffsetX = 0; let mOffsetY = 0;
   let mIsDragging = false; let mStartX, mStartY; let mInitialDist = 0;
 
+  // GitHub Pages用に fetch メソッドを使用してデータを取得
   window.onload = function() {
     fetch(GAS_API_URL)
       .then(response => response.json())
       .then(data => {
+        // GAS側で .slice(1) 済みなら data そのまま、そうでなければ data.slice(1)
         let cleanData = data.filter(row => row[1] && row[3]);
         cleanData.sort((a, b) => {
           const floorA = a[1]; const floorB = b[1];
@@ -198,11 +197,62 @@
         renderFloorThumbs(allData);
         initMapControls();
       })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('floor-lists-container').innerText = "データの読み込みに失敗しました。";
+      .catch(error => {
+        console.error("データの読み込みに失敗しました:", error);
+        alert("データの読み込みに失敗しました。GASのURLを確認してください。");
       });
   };
+
+  function initMapControls() {
+    const frame = document.getElementById('map-parent-frame');
+    frame.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        mInitialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      } else if (e.touches.length === 1) {
+        mIsDragging = true;
+        mStartX = e.touches[0].pageX - mOffsetX;
+        mStartY = e.touches[0].pageY - mOffsetY;
+      }
+    }, {passive: true});
+
+    frame.addEventListener('touchmove', (e) => {
+      if (mScale > 1 || e.touches.length === 2) {
+        if (e.cancelable) e.preventDefault();
+      } else {
+        mIsDragging = false;
+        return;
+      }
+
+      if (e.touches.length === 2) {
+        const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+        mScale = Math.min(Math.max(1, mScale * (dist / mInitialDist)), 4);
+        mInitialDist = dist;
+      } else if (e.touches.length === 1 && mIsDragging) {
+        mOffsetX = e.touches[0].pageX - mStartX;
+        mOffsetY = e.touches[0].pageY - mStartY;
+      }
+      applyMapTransform();
+    }, {passive: false});
+
+    frame.addEventListener('touchend', () => { mIsDragging = false; });
+  }
+
+  function applyMapTransform() {
+    const target = document.querySelector('.map-wrapper.active .map-img-container');
+    const frame = document.getElementById('map-parent-frame');
+    if (!target) return;
+    if (mScale <= 1.01) {
+      mScale = 1; mOffsetX = 0; mOffsetY = 0;
+    } else {
+      const limitX = (frame.clientWidth * (mScale - 1)) / 2;
+      const limitY = (frame.clientHeight * (mScale - 1)) / 2;
+      mOffsetX = Math.min(Math.max(mOffsetX, -limitX), limitX);
+      mOffsetY = Math.min(Math.max(mOffsetY, -limitY), limitY);
+    }
+    target.style.transform = `translate(${mOffsetX}px, ${mOffsetY}px) scale(${mScale})`;
+  }
+
+  function resetMap() { mScale = 1; mOffsetX = 0; mOffsetY = 0; applyMapTransform(); }
 
   function processData(data) {
     groupedData = {};
@@ -276,17 +326,12 @@
 
   function updateViewer() {
     const item = currentGroup[currentIndex]; if(!item) return;
-    const img = document.getElementById('v-img');
-    img.style.opacity = 0;
-    setTimeout(() => {
-      img.src = item[3];
-      document.getElementById('v-floor').innerText = item[1];
-      document.getElementById('v-room').innerText = item[2];
-      document.getElementById('v-desc').innerText = item[5] ? item[5].trim() : "";
-      document.getElementById('v-counter').innerText = `${currentIndex + 1} / ${currentGroup.length}`;
-      document.querySelectorAll('.nav-btn').forEach(b => b.style.display = currentGroup.length > 1 ? 'block' : 'none');
-      img.onload = () => { img.style.opacity = 1; };
-    }, 50);
+    document.getElementById('v-img').src = item[3];
+    document.getElementById('v-floor').innerText = item[1];
+    document.getElementById('v-room').innerText = item[2];
+    document.getElementById('v-desc').innerText = item[5] ? item[5].trim() : "";
+    document.getElementById('v-counter').innerText = `${currentIndex + 1} / ${currentGroup.length}`;
+    document.querySelectorAll('.nav-btn').forEach(b => b.style.display = currentGroup.length > 1 ? 'block' : 'none');
     resetZoom();
   }
 
@@ -305,9 +350,8 @@
 
   function closeViewer() { document.getElementById('viewer').style.display = 'none'; }
 
-  // 写真ズーム制御
   let scale = 1; let touchStartX = 0; let currentTranslateX = 0; let isPinching = false;
-  let initialPinchDistance = 0; let dragX = 0; let dragY = 0; let lastStartX = 0; let lastStartY = 0; let isDragging = false; 
+  let initialPinchDistance = 0; let dragX = 0; let dragY = 0; let lastStartX = 0; let lastStartY = 0;
   const viewerElement = document.getElementById('viewer');
   const imgElement = document.getElementById('v-img');
 
@@ -329,40 +373,10 @@
   }, {passive: true});
 
   function updateTransform() {
-    if (scale > 1) { const containerRect = viewerElement.querySelector('.img-container').getBoundingClientRect(); const imgRect = imgElement.getBoundingClientRect(); const maxW = Math.max(0, (imgRect.width - containerRect.width) / 2 / scale); const maxH = Math.max(0, (imgRect.height - containerRect.height) / 2 / scale); dragX = Math.min(Math.max(dragX, -maxW * scale), maxW * scale); dragY = Math.min(Math.max(dragY, -maxH * scale), maxH * scale); imgElement.style.transform = `translate(${dragX}px, ${dragY}px) scale(${scale})`; } else { imgElement.style.transform = `translate(0px, 0px) scale(1)`; }
+    if (scale > 1) { imgElement.style.transform = `translate(${dragX}px, ${dragY}px) scale(${scale})`; } else { imgElement.style.transform = `translate(0px, 0px) scale(1)`; }
   }
 
-  function resetZoom() { scale = 1; dragX = 0; dragY = 0; currentTranslateX = 0; imgElement.style.transition = 'none'; updateTransform(); }
-
-  // 間取り図パン・ズーム
-  function initMapControls() {
-    const frame = document.getElementById('map-parent-frame');
-    frame.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) { mInitialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); } 
-      else if (e.touches.length === 1) { mIsDragging = true; mStartX = e.touches[0].pageX - mOffsetX; mStartY = e.touches[0].pageY - mOffsetY; }
-    }, {passive: true});
-    frame.addEventListener('touchmove', (e) => {
-      if (mScale > 1 || e.touches.length === 2) { if (e.cancelable) e.preventDefault(); } else { mIsDragging = false; return; }
-      if (e.touches.length === 2) { const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); mScale = Math.min(Math.max(1, mScale * (dist / mInitialDist)), 4); mInitialDist = dist; } 
-      else if (e.touches.length === 1 && mIsDragging) { mOffsetX = e.touches[0].pageX - mStartX; mOffsetY = e.touches[0].pageY - mStartY; }
-      applyMapTransform();
-    }, {passive: false});
-    frame.addEventListener('touchend', () => { mIsDragging = false; });
-  }
-
-  function applyMapTransform() {
-    const target = document.querySelector('.map-wrapper.active .map-img-container');
-    const frame = document.getElementById('map-parent-frame');
-    if (!target) return;
-    if (mScale <= 1.01) { mScale = 1; mOffsetX = 0; mOffsetY = 0; } else {
-      const limitX = (frame.clientWidth * (mScale - 1)) / 2;
-      const limitY = (frame.clientHeight * (mScale - 1)) / 2;
-      mOffsetX = Math.min(Math.max(mOffsetX, -limitX), limitX);
-      mOffsetY = Math.min(Math.max(mOffsetY, -limitY), limitY);
-    }
-    target.style.transform = `translate(${mOffsetX}px, ${mOffsetY}px) scale(${mScale})`;
-  }
-  function resetMap() { mScale = 1; mOffsetX = 0; mOffsetY = 0; applyMapTransform(); }
+  function resetZoom() { scale = 1; dragX = 0; dragY = 0; currentTranslateX = 0; updateTransform(); }
 </script>
 </body>
 </html>
